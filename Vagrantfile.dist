@@ -1,0 +1,34 @@
+# Based on the Liip Vagrant Symfony2 solution
+
+# Check if we are running under windows
+def Kernel.is_windows
+  processor, platform, *rest = RUBY_PLATFORM.split("-")
+  platform == "mingw32"
+end
+
+Vagrant::Config.run do |config|
+  
+  config.vm.define :main do |main_config|
+    main_config.vm.box = "innerfuse-squeeze64"
+    main_config.vm.box_url = "http://innerfuse.biz/vagrant/innerfuse-squeeze64.box"
+    
+    # Uncomment when you want to see the VM GUI
+    config.vm.boot_mode = :gui
+    
+    # Forward a port from the guest to the host, which allows for outside
+    # computers to access the VM, whereas host only networking does not.
+    config.vm.forward_port 80, 80
+    
+    main_config.vm.network :hostonly, "192.168.2.2"
+    
+    # Disable to the use of NFS under Windows as this ain't supported under Windows
+    main_config.vm.share_folder "v-root", "/vagrant", ".", :nfs => !Kernel.is_windows
+    
+    main_config.vm.provision :puppet, :options => "--verbose --debug", :module_path => "vagrant/puppet/modules" do |puppet|
+      puppet.manifests_path = "vagrant/puppet/manifests"
+      puppet.manifest_file = "init.pp"
+      puppet.manifest_file = "main.pp"
+    end
+  end
+end
+
